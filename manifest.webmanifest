@@ -1,0 +1,11 @@
+{
+  "name": "Soul Survivor: Anime",
+  "short_name": "Soul Survivor",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#080b18",
+  "theme_color": "#101326",
+  "description": "Game sinh tồn anime 2D"
+}

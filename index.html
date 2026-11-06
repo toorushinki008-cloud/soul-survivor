@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#101326"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest"><title>Soul Survivor: Anime</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080b18;color:#fff;font-family:system-ui,Arial;touch-action:none}
+#game{display:block;width:100vw;height:100vh;background:#101a2b}
+#hud{position:fixed;inset:0;pointer-events:none;text-shadow:0 2px 4px #000}
+.panel{position:absolute;background:#10182dcc;border:1px solid #7da4d988;border-radius:12px;padding:7px 11px;backdrop-filter:blur(5px);font-weight:700}
+#top{left:10px;top:8px;display:flex;gap:8px;align-items:center}#stats{left:10px;top:58px;min-width:160px;font-size:12px}
+.bar{height:8px;background:#31394e;border-radius:9px;overflow:hidden;margin:3px 0 6px}.fill{height:100%;width:100%;background:#e64d6a}
+#xpbar{position:absolute;left:0;right:0;top:0;height:5px;background:#29314b}#xpfill{height:100%;width:0;background:#56e6d0}
+#level{right:10px;top:9px}#tip{position:absolute;top:53px;right:10px;font-size:11px;text-align:right;opacity:.9}
+#controls{position:fixed;inset:0;pointer-events:none}.stick{position:absolute;bottom:max(18px,env(safe-area-inset-bottom));left:22px;width:116px;height:116px;border-radius:50%;background:#d9e9ff22;border:2px solid #d9e9ff66;pointer-events:auto;touch-action:none}
+#knob{position:absolute;width:48px;height:48px;left:32px;top:32px;border-radius:50%;background:#c8e8ff99;border:2px solid #fff;box-shadow:0 2px 12px #0008}
+#attack{position:absolute;right:26px;bottom:max(27px,env(safe-area-inset-bottom));width:76px;height:76px;border-radius:50%;border:2px solid #ffdf9c;background:#e88b3977;color:white;font-weight:900;font-size:12px;display:grid;place-items:center;pointer-events:auto}
+#pause{position:absolute;right:12px;top:62px;width:38px;height:38px;border-radius:10px;background:#293958cc;color:white;border:1px solid #9ab8df;pointer-events:auto}
+.overlay{position:fixed;inset:0;background:#080b18dd;display:flex;align-items:center;justify-content:center;padding:18px;z-index:5}
+.box{max-width:520px;width:100%;background:linear-gradient(145deg,#202b49,#11172b);border:1px solid #91a9dc77;border-radius:18px;padding:22px;text-align:center;box-shadow:0 20px 70px #0009}
+h1{font-size:clamp(22px,5vw,38px);margin:0 0 8px;color:#ffdf9c}p{color:#d3ddf2;line-height:1.45}
+button{font:700 15px system-ui;border:0;border-radius:12px;padding:12px 18px;background:linear-gradient(90deg,#f6a34d,#e45d75);color:#1b1420;margin:5px}
+.cards{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}.skill{flex:1;min-width:130px;background:#273657;border:1px solid #7d9bd5;color:white;border-radius:12px;padding:13px 8px}
+#toast{position:absolute;left:50%;top:23%;transform:translateX(-50%);background:#10182ddd;border:1px solid #ffd28c;padding:8px 15px;border-radius:10px;opacity:0;transition:opacity .2s}
+@media (orientation:portrait){#rotate{display:flex!important}}
+#rotate{display:none;position:fixed;inset:0;background:#0b1020;z-index:10;align-items:center;justify-content:center;text-align:center;padding:30px}
+</style></head>
+<body>
+<canvas id="game"></canvas><div id="xpbar"><div id="xpfill"></div></div>
+<div id="hud">
+ <div id="top" class="panel">⚔️ <span id="kills">0</span> hạ gục　🪙 <span id="gold">0</span></div>
+ <div id="stats" class="panel">❤️ <span id="hptext">100/100</span><div class="bar"><div id="hpfill" class="fill"></div></div>⏱️ <span id="time">00:00</span></div>
+ <div id="level" class="panel">Cấp <span id="lv">1</span></div><div id="tip">SOUL SURVIVOR<br>Di chuyển để né quái vật</div>
+ <div id="toast"></div>
+</div>
+<div id="controls"><div class="stick" id="stick"><div id="knob"></div></div><button id="attack">✨<br>TỰ ĐÁNH</button><button id="pause">Ⅱ</button></div>
+<div class="overlay" id="menu"><div class="box"><h1>SOUL SURVIVOR</h1><div style="color:#9fe9e2;font-weight:800;letter-spacing:3px">ANIME EDITION</div><p>Sống sót giữa đàn quái vật. Di chuyển, né tránh và tự động tung kiếm khí vào kẻ địch gần nhất.</p><p>🏆 Hạ quái • Nhặt linh hồn • Lên cấp • Chọn kỹ năng</p><button id="start">BẮT ĐẦU CHIẾN ĐẤU</button><p style="font-size:12px">Khuyến nghị xoay điện thoại nằm ngang.</p></div></div>
+<div class="overlay" id="upgrade" style="display:none"><div class="box"><h1>LÊN CẤP!</h1><p>Chọn một năng lực để tiếp tục</p><div class="cards" id="choices"></div></div></div>
+<div class="overlay" id="gameover" style="display:none"><div class="box"><h1>KIỆT SỨC!</h1><p id="result"></p><button id="again">CHƠI LẠI</button></div></div>
+<div id="rotate"><div><div style="font-size:52px">📱 ↻</div><h2>Hãy xoay điện thoại</h2><p>Game được thiết kế để chơi ở chế độ màn hình ngang.</p></div></div>
+<script>
+(()=>{
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+let W=innerWidth,H=innerHeight,dpr=1;
+function resize(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
+addEventListener('resize',resize);resize();
+const $=id=>document.getElementById(id);
+let state='menu',last=0,elapsed=0,spawn=0,attackClock=0,shake=0;
+let player,enemies=[],shots=[],gems=[],particles=[],kills=0,gold=0,level=1,xp=0,nextXp=6;
+let joystick={x:0,y:0},keys={};
+const rand=(a,b)=>a+Math.random()*(b-a),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function reset(){elapsed=0;spawn=0;attackClock=0;kills=0;gold=0;level=1;xp=0;nextXp=6;enemies=[];shots=[];gems=[];particles=[];player={x:W/2,y:H/2,r:15,hp:100,maxHp:100,speed:190,damage:24,range:235,rate:.72,magnet:90};updateHud()}
+function updateHud(){$('kills').textContent=kills;$('gold').textContent=gold;$('hptext').textContent=Math.ceil(player.hp)+'/'+player.maxHp;$('hpfill').style.width=(player.hp/player.maxHp*100)+'%';$('lv').textContent=level;$('time').textContent=fmt(elapsed);$('xpfill').style.width=(xp/nextXp*100)+'%'}
+function fmt(t){let m=Math.floor(t/60),s=Math.floor(t%60);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
+function toast(s){$('toast').textContent=s;$('toast').style.opacity=1;setTimeout(()=>$('toast').style.opacity=0,900)}
+function spawnEnemy(){let side=Math.floor(Math.random()*4),x=side===0?-20:side===1?W+20:rand(0,W),y=side===2?-20:side===3?H+20:rand(0,H);let tough=Math.random()<Math.min(.08+elapsed/500,.3);enemies.push({x,y,r:tough?19:13,hp:tough?85:38,max:tough?85:38,speed:tough?rand(35,52):rand(48,76),dmg:tough?16:9,tough,hit:0})}
+function shoot(){let target=null,best=player.range;for(const e of enemies){let d=dist(player,e);if(d<best){best=d;target=e}}if(!target)return;let a=Math.atan2(target.y-player.y,target.x-player.x);shots.push({x:player.x,y:player.y,vx:Math.cos(a)*440,vy:Math.sin(a)*440,life:.55,damage:player.damage,r:7});particles.push({x:player.x,y:player.y,life:.18,max:.18,color:'#8ff8ed',r:28})}
+function levelUp(){level++;$('upgrade').style.display='flex';state='upgrade';let skills=[['❤️ Sinh lực','Hồi 35 máu',()=>player.hp=Math.min(player.maxHp,player.hp+35)],['⚔️ Kiếm khí','Sát thương +9',()=>player.damage+=9],['💨 Thân pháp','Tốc độ +22%',()=>player.speed*=1.22],['✨ Tầm linh lực','Tầm đánh +55',()=>player.range+=55],['🌪️ Tốc chiến','Tốc độ đánh nhanh hơn',()=>player.rate=Math.max(.25,player.rate*.82)]].sort(()=>Math.random()-.5).slice(0,3);$('choices').innerHTML='';skills.forEach(s=>{let b=document.createElement('button');b.className='skill';b.innerHTML='<b>'+s[0]+'</b><br><small>'+s[1]+'</small>';b.onclick=()=>{s[2]();$('upgrade').style.display='none';state='play';last=performance.now();toast('Đã nâng cấp!')};$('choices').appendChild(b)})}
+function burst(x,y,color,n=8){for(let i=0;i<n;i++){let a=rand(0,Math.PI*2),v=rand(30,130);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rand(.2,.5),max:.5,color,r:rand(2,5)})}}
+function update(dt){
+ elapsed+=dt;spawn-=dt;attackClock-=dt;
+ if(spawn<=0){spawn=Math.max(.28,1.05-elapsed*.006);spawnEnemy();if(elapsed>55&&Math.random()<.18)spawnEnemy()}
+ let ix=joystick.x+(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),iy=joystick.y+(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),len=Math.hypot(ix,iy)||1;
+ player.x=Math.max(18,Math.min(W-18,player.x+ix/len*player.speed*dt));player.y=Math.max(22,Math.min(H-22,player.y+iy/len*player.speed*dt));
+ if(attackClock<=0){shoot();attackClock=player.rate}
+ for(const e of enemies){let a=Math.atan2(player.y-e.y,player.x-e.x),d=dist(player,e);e.x+=Math.cos(a)*e.speed*dt;e.y+=Math.sin(a)*e.speed*dt;if(d<player.r+e.r){player.hp-=e.dmg*dt;shake=4}}
+ for(const s of shots){s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;for(const e of enemies){if(e.hp>0&&Math.hypot(s.x-e.x,s.y-e.y)<s.r+e.r){e.hp-=s.damage;s.life=0;burst(s.x,s.y,'#8ff8ed',4);if(e.hp<=0){kills++;gold+=e.tough?5:1;gems.push({x:e.x,y:e.y,r:e.tough?8:6,value:e.tough?3:1});burst(e.x,e.y,e.tough?'#ffb45c':'#d47cff',12)}}}}
+ shots=shots.filter(s=>s.life>0&&s.x>-30&&s.x<W+30&&s.y>-30&&s.y<H+30);enemies=enemies.filter(e=>e.hp>0);
+ for(const g of gems){let d=dist(player,g);if(d<player.magnet){let a=Math.atan2(player.y-g.y,player.x-g.x);g.x+=Math.cos(a)*280*dt;g.y+=Math.sin(a)*280*dt}if(d<player.r+g.r+5){xp+=g.value;g.got=true}}
+ gems=gems.filter(g=>!g.got);if(xp>=nextXp){xp-=nextXp;nextXp=Math.floor(nextXp*1.34+3);levelUp()}
+ for(const p of particles){p.life-=dt;p.x+=(p.vx||0)*dt;p.y+=(p.vy||0)*dt}particles=particles.filter(p=>p.life>0);
+ if(player.hp<=0){player.hp=0;state='over';$('result').textContent=`Bạn sống sót ${fmt(elapsed)}, hạ ${kills} quái và đạt cấp ${level}.`; $('gameover').style.display='flex'}
+ updateHud();
+}
+function draw(){
+ ctx.save();if(shake>0){ctx.translate(rand(-shake,shake),rand(-shake,shake));shake*=.82}
+ ctx.fillStyle='#101a2b';ctx.fillRect(0,0,W,H);
+ // mystical arena grid and runes
+ ctx.strokeStyle='#263957';ctx.lineWidth=1;for(let x=0;x<W;x+=48){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=48){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ for(let i=0;i<12;i++){let x=(i*173+elapsed*7)%(W+80)-40,y=(i*97+Math.sin(elapsed+i)*22)%H;ctx.fillStyle='#6a8caa18';ctx.beginPath();ctx.arc(x,y,2,0,7);ctx.fill()}
+ for(const g of gems){ctx.save();ctx.translate(g.x,g.y);ctx.rotate(elapsed*2);ctx.fillStyle='#62f3df';ctx.shadowColor='#62f3df';ctx.shadowBlur=12;ctx.beginPath();ctx.moveTo(0,-8);ctx.lineTo(6,0);ctx.lineTo(0,8);ctx.lineTo(-6,0);ctx.fill();ctx.restore()}
+ for(const s of shots){ctx.fillStyle='#a4fff2';ctx.shadowColor='#55ffe7';ctx.shadowBlur=16;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,7);ctx.fill();ctx.shadowBlur=0}
+ for(const e of enemies){ctx.save();ctx.translate(e.x,e.y);ctx.fillStyle=e.tough?'#9c365c':'#7544a0';ctx.shadowColor=e.tough?'#ff5c8b':'#b875ff';ctx.shadowBlur=12;ctx.beginPath();ctx.arc(0,0,e.r,0,7);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#ffdfec';ctx.beginPath();ctx.arc(-5,-3,2.5,0,7);ctx.arc(5,-3,2.5,0,7);ctx.fill();ctx.fillStyle='#20172d';ctx.fillRect(-e.r,-e.r-8,e.r*2,3);ctx.fillStyle='#ff637e';ctx.fillRect(-e.r,-e.r-8,e.r*2*(e.hp/e.max),3);ctx.restore()}
+ // anime swordsman with aura
+ ctx.save();ctx.translate(player.x,player.y);ctx.fillStyle='#f7d5b4';ctx.beginPath();ctx.arc(0,-5,10,0,7);ctx.fill();ctx.fillStyle='#253d68';ctx.beginPath();ctx.ellipse(0,9,11,13,0,0,7);ctx.fill();ctx.fillStyle='#1a2036';ctx.beginPath();ctx.moveTo(-10,-11);ctx.lineTo(-7,-23);ctx.lineTo(0,-14);ctx.lineTo(7,-24);ctx.lineTo(11,-8);ctx.closePath();ctx.fill();ctx.fillStyle='#ffdc8c';ctx.fillRect(-5,-7,3,2);ctx.fillRect(3,-7,3,2);ctx.strokeStyle='#9ffff2';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,20+Math.sin(elapsed*5)*2,0,7);ctx.stroke();ctx.restore();
+ for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;if(p.vx===undefined){ctx.globalAlpha*=.6;ctx.beginPath();ctx.arc(p.x,p.y,p.r*(1-p.life/p.max),0,7);ctx.strokeStyle=p.color;ctx.stroke()}else{ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill()}}ctx.globalAlpha=1;
+ ctx.restore();
+}
+function loop(now){let dt=Math.min((now-last)/1000||0,.04);last=now;if(state==='play')update(dt);draw();requestAnimationFrame(loop)}
+$('start').onclick=()=>{reset();$('menu').style.display='none';state='play';last=performance.now()};
+$('again').onclick=()=>{$('gameover').style.display='none';reset();state='play';last=performance.now()};
+$('pause').onclick=()=>{if(state==='play'){state='pause';$('menu').style.display='flex';$('menu').querySelector('h1').textContent='TẠM DỪNG';$('menu').querySelector('p').textContent='Nghỉ một chút rồi tiếp tục cuộc chiến.';$('start').textContent='TIẾP TỤC';$('start').onclick=()=>{$('menu').style.display='none';$('menu').querySelector('h1').textContent='SOUL SURVIVOR';$('start').textContent='BẮT ĐẦU CHIẾN ĐẤU';$('start').onclick=startNew;state='play';last=performance.now()}}};
+function startNew(){$('menu').style.display='none';reset();state='play';last=performance.now()}
+const stick=$('stick'),knob=$('knob');let pointer=null;
+stick.addEventListener('pointerdown',e=>{pointer=e.pointerId;stick.setPointerCapture(pointer);moveStick(e)});
+stick.addEventListener('pointermove',e=>{if(pointer===e.pointerId)moveStick(e)});
+function moveStick(e){let r=stick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,l=Math.hypot(dx,dy),m=35;if(l>m){dx=dx/l*m;dy=dy/l*m}joystick.x=dx/m;joystick.y=dy/m;knob.style.left=(32+dx)+'px';knob.style.top=(32+dy)+'px'}
+function release(){pointer=null;joystick.x=joystick.y=0;knob.style.left='32px';knob.style.top='32px'}
+stick.addEventListener('pointerup',release);stick.addEventListener('pointercancel',release);
+addEventListener('keydown',e=>{keys[e.key]=true;if(e.key===' '&&state==='play')shoot()});addEventListener('keyup',e=>keys[e.key]=false);
+$('attack').addEventListener('pointerdown',()=>{if(state==='play')shoot()});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+reset();requestAnimationFrame(t=>{last=t;loop(t)});
+})();
+</script></body></html>
+<script>if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));</script>
